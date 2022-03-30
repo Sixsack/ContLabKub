@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "stdio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,11 +57,12 @@ ADCStructure ADCChannel;
 
 //uint32_t ADCdata = 0;
 
-static uint32_t P_n = 0;
-static uint32_t P_n_1 = 0;
-static uint32_t P0_n = 0;
-static uint32_t P0_n_1 = 0;
-static float Y_n = 0.00;
+float P_n = 0;
+float P_n_1 = 0;
+float P0_n = 0;
+float P0_n_1 = 0;
+float Y_n = 0;
+float error=0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -128,20 +129,22 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  static uint32_t timestamp = 0;
-		  //calling function
-	  ADCPollingMedthodUpdate();
-//		  HAL_ADC_Start_DMA(&hadc1, &ADCdata, 1);
-	  P_n = ADCChannel.data;
-//		  P_n = ADCdata;
+
 	  if (HAL_GetTick() - timestamp >= 100)
 	  {
 		  timestamp = HAL_GetTick();
+		  //calling function
+		  ADCPollingMedthodUpdate();
+//		  HAL_ADC_Start_DMA(&hadc1, &ADCdata, 1);
+		  P_n = ADCChannel.data;
+//		  P_n = ADCdata;
+//		  error=P_n-P_n_1;
 
-		  if (P_n - P_n_1 == -0.50*4095)
+		  if (P_n - P_n_1 <= -2047.5)
 		  {
 			  P0_n = P0_n_1 + 4095;
 		  }
-		  else if (P_n - P_n_1 == 0.50*4095)
+		  else if (P_n - P_n_1 >= 2047.5)
 		  {
 			  P0_n = P0_n_1 - 4095;
 		  }
@@ -149,7 +152,9 @@ int main(void)
 		  {
 			  P0_n = P0_n_1;
 		  }
+
 		  P_n_1 = P_n;
+		  P0_n_1 = P0_n;
 		  Y_n = P0_n + P_n;
 	  }
 
@@ -223,8 +228,8 @@ static void MX_ADC1_Init(void)
   hadc1.Instance = ADC1;
   hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
-  hadc1.Init.ScanConvMode = ENABLE;
-  hadc1.Init.ContinuousConvMode = ENABLE;
+  hadc1.Init.ScanConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
@@ -240,7 +245,7 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_7;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_84CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
